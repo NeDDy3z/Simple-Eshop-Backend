@@ -17,7 +17,7 @@ public class NotificationListener {
         this.observers.addAll(notificationObservers);
     }
 
-    @KafkaListener(topics = "order-created", groupId = "notification-group")
+    @KafkaListener(topics = "${KAFKACLUSTER_PREFIX:}order-created", groupId = "notification-group")
     public void handleOrderCreated(OrderEventDto event) {
         System.out.println("KAFKA: Přijata zpráva o objednávce.");
         notifyObservers(event);

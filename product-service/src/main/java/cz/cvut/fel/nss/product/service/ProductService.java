@@ -6,9 +6,9 @@ import cz.cvut.fel.nss.product.exception.InsufficientStockException;
 import cz.cvut.fel.nss.product.exception.ProductNotFoundException;
 import cz.cvut.fel.nss.product.exception.ValidationException;
 import cz.cvut.fel.nss.product.model.Product;
-import cz.cvut.fel.nss.product.model.ProductDocument;
 import cz.cvut.fel.nss.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,9 +23,15 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private static final String SYNC_TOPIC = "product-sync";
+
+    @Value("${KAFKACLUSTER_PREFIX:}")
+    private String kafkaPrefix;
 
     private final ProductSearchClient searchClient;
+
+    private String getSyncTopic() {
+        return kafkaPrefix + "product-sync";
+    }
 
     @Cacheable("products")
     public List<Product> getAllProducts() {
@@ -45,7 +51,13 @@ public class ProductService {
         Product savedProduct = productRepository.save(product);
         sendSyncEvent(savedProduct, "CREATE");
 
-        searchClient.indexProduct(savedProduct);
+        if (searchClient != null) {
+            try {
+                searchClient.indexProduct(savedProduct);
+            } catch (Exception e) {
+                System.err.println("Search indexing failed: " + e.getMessage());
+            }
+        }
         return savedProduct;
     }
 
@@ -60,7 +72,14 @@ public class ProductService {
         product.setCategory(productDetails.getCategory());
         Product updatedProduct = productRepository.save(product);
         sendSyncEvent(updatedProduct, "UPDATE");
-        searchClient.indexProduct(updatedProduct);
+        
+        if (searchClient != null) {
+            try {
+                searchClient.indexProduct(updatedProduct);
+            } catch (Exception e) {
+                System.err.println("Search indexing failed: " + e.getMessage());
+            }
+        }
         return updatedProduct;
     }
 
@@ -81,8 +100,16 @@ public class ProductService {
     public void deleteProduct(Long id) {
         Product product = getProductById(id);
         productRepository.delete(product);
-        searchClient.removeProductIndex(id);
-        kafkaTemplate.send(SYNC_TOPIC, ProductSyncEvent.builder()
+        
+        if (searchClient != null) {
+            try {
+                searchClient.removeProductIndex(id);
+            } catch (Exception e) {
+                System.err.println("Search index removal failed: " + e.getMessage());
+            }
+        }
+        
+        kafkaTemplate.send(getSyncTopic(), ProductSyncEvent.builder()
                 .id(id)
                 .action("DELETE")
                 .build());
@@ -114,6 +141,6 @@ public class ProductService {
                 .stockQuantity(product.getStockQuantity())
                 .action(action)
                 .build();
-        kafkaTemplate.send(SYNC_TOPIC, event);
+        kafkaTemplate.send(getSyncTopic(), event);
     }
 }

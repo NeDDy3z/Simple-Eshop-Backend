@@ -15,7 +15,7 @@ public class StockStatusListener {
 
     private final OrderRepository orderRepository;
 
-    @KafkaListener(topics = "stock-status", groupId = "order-service-group")
+    @KafkaListener(topics = "${KAFKACLUSTER_PREFIX:}stock-status", groupId = "order-service-group")
     @Transactional
     public void handleStockStatus(StockStatusEvent event) {
         System.out.println("KAFKA: Received stock status for order: " + event.getOrderId() + " - Success: " + event.isSuccess());

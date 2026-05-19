@@ -14,7 +14,7 @@ public class ProductSyncListener {
 
     private final HazelcastInstance hazelcastInstance;
 
-    @KafkaListener(topics = "product-sync", groupId = "order-service-group")
+    @KafkaListener(topics = "${KAFKACLUSTER_PREFIX:}product-sync", groupId = "order-service-group")
     public void handleProductSync(ProductSyncEvent event) {
         System.out.println("KAFKA: Received product synchronization event: " + event.getId() + " - " + event.getAction());
         

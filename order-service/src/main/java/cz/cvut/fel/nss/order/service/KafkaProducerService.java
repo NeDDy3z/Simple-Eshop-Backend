@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,11 +14,13 @@ import org.springframework.stereotype.Service;
 public class KafkaProducerService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private static final String TOPIC = "order-created";
+
+    @Value("${KAFKACLUSTER_PREFIX:}")
+    private String kafkaPrefix;
 
     public void sendOrderCreatedEvent(Long orderId, Long productId, int quantity, String userEmail) {
         OrderCreatedEvent event = new OrderCreatedEvent(orderId, productId, quantity, userEmail);
-        kafkaTemplate.send(TOPIC, event);
+        kafkaTemplate.send(kafkaPrefix + "order-created", event);
     }
 
     @Data

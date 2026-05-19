@@ -12,7 +12,10 @@ import org.springframework.context.annotation.Bean;
 
 import java.math.BigDecimal;
 
-@SpringBootApplication
+@SpringBootApplication(excludeName = {
+		"org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration",
+		"org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration"
+})
 @EnableCaching
 public class ProductApplication {
 

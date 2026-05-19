@@ -1,0 +1,47 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    # Resolve DNS using Heroku's resolver
+    resolver 8.8.8.8 8.8.4.4;
+
+    server {
+        listen ${PORT};
+
+        location /api/products {
+            proxy_pass https://${PRODUCT_SERVICE_URL};
+            proxy_ssl_server_name on;
+            proxy_ssl_verify off;
+            proxy_set_header Host ${PRODUCT_SERVICE_URL};
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/categories {
+            proxy_pass https://${PRODUCT_SERVICE_URL};
+            proxy_ssl_server_name on;
+            proxy_ssl_verify off;
+            proxy_set_header Host ${PRODUCT_SERVICE_URL};
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/ {
+            proxy_pass https://${ORDER_SERVICE_URL};
+            proxy_ssl_server_name on;
+            proxy_ssl_verify off;
+            proxy_set_header Host ${ORDER_SERVICE_URL};
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location / {
+            return 200 'E-Shop API Gateway is Running';
+            add_header Content-Type text/plain;
+        }
+    }
+}

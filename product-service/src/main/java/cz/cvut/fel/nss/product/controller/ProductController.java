@@ -3,6 +3,7 @@ package cz.cvut.fel.nss.product.controller;
 import cz.cvut.fel.nss.product.model.Product;
 import cz.cvut.fel.nss.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +18,9 @@ public class ProductController {
 
     private final ProductService productService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Value("${KAFKACLUSTER_PREFIX:}")
+    private String kafkaPrefix;
 
     // GET request to retrieve all products
     @GetMapping
@@ -48,7 +52,7 @@ public class ProductController {
     @PostMapping("/test-kafka")
     public String testKafka(@RequestBody cz.cvut.fel.nss.product.dto.OrderEventDto event) {
         // Send a message to the "order-created" topic
-        kafkaTemplate.send("order-created", event);
+        kafkaTemplate.send(kafkaPrefix + "order-created", event);
         return "Message sent to Kafka!";
     }
 }
